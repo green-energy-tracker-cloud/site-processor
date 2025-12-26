@@ -170,6 +170,11 @@
 			<version>${cloud.events.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-json-jackson</artifactId>
+			<version>${cloud.events.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>google-cloudevent-types</artifactId>
 			<version>${cloud.events.types.version}</version>
