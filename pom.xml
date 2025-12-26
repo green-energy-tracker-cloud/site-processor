@@ -30,6 +30,8 @@
 		<map.lombok.mapstruct.version>0.2.0</map.lombok.mapstruct.version>
 		<logstash.logback.version>7.4</logstash.logback.version>
 		<jacoco.maven.plugin.version>0.8.11</jacoco.maven.plugin.version>
+		<cloud.events.version>2.5.0</cloud.events.version>
+		<cloud.events.types.version>0.17.1</cloud.events.types.version>
 		<url.api.contracts.repo>artifactregistry://us-east1-maven.pkg.dev/reference-lens-482009-j5/api-contracts-repo</url.api.contracts.repo>
 	</properties>
 	<repositories>
@@ -147,6 +149,30 @@
 		<dependency>
 			<groupId>io.github.resilience4j</groupId>
 			<artifactId>resilience4j-reactor</artifactId>
+		</dependency>
+
+		<!-- CloudEvents Core -->
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-core</artifactId>
+			<version>${cloud.events.version}</version>
+		</dependency>
+		<!-- CloudEvents HTTP Basic -->
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-http-basic</artifactId>
+			<version>${cloud.events.version}</version>
+		</dependency>
+		<!-- CloudEvents Spring -->
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-spring</artifactId>
+			<version>${cloud.events.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.cloud</groupId>
+			<artifactId>google-cloudevent-types</artifactId>
+			<version>${cloud.events.types.version}</version>
 		</dependency>
 	</dependencies>
 
