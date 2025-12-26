@@ -133,4 +133,109 @@ class GeoLocationWriteTest {
 
         assertEquals(-122.5, geoLocation.getLongitude());
     }
+
+    @Test
+    void toString_shouldContainLatitudeAndLongitude() {
+        GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
+
+        String result = geoLocation.toString();
+
+        assertNotNull(result);
+        assertTrue(result.contains("GeoLocationWrite"));
+        assertTrue(result.contains("latitude=40.7128"));
+        assertTrue(result.contains("longitude=-74.006"));
+    }
+
+    @Test
+    void toString_shouldNotReturnNull() {
+        GeoLocationWrite geoLocation = new GeoLocationWrite();
+
+        assertNotNull(geoLocation.toString());
+    }
+
+    @Test
+    void equals_shouldReturnTrueForSameObject() {
+        GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
+
+        assertEquals(geoLocation, geoLocation);
+    }
+
+    @Test
+    void equals_shouldReturnFalseForNull() {
+        GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
+
+        assertNotEquals(null, geoLocation);
+    }
+
+    @Test
+    void equals_shouldReturnFalseForDifferentType() {
+        GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
+        String differentType = "Not a GeoLocationWrite";
+
+        assertNotEquals(differentType, geoLocation);
+    }
+
+    @Test
+    void equals_shouldReturnFalseForDifferentLatitude() {
+        GeoLocationWrite geo1 = new GeoLocationWrite(40.7128, -74.0060);
+        GeoLocationWrite geo2 = new GeoLocationWrite(41.0000, -74.0060);
+
+        assertNotEquals(geo1, geo2);
+    }
+
+    @Test
+    void equals_shouldReturnFalseForDifferentLongitude() {
+        GeoLocationWrite geo1 = new GeoLocationWrite(40.7128, -74.0060);
+        GeoLocationWrite geo2 = new GeoLocationWrite(40.7128, -75.0000);
+
+        assertNotEquals(geo1, geo2);
+    }
+
+    @Test
+    void equals_shouldBeSymmetric() {
+        GeoLocationWrite geo1 = new GeoLocationWrite(40.7128, -74.0060);
+        GeoLocationWrite geo2 = new GeoLocationWrite(40.7128, -74.0060);
+
+        assertTrue(geo1.equals(geo2) && geo2.equals(geo1));
+    }
+
+    @Test
+    void equals_shouldBeTransitive() {
+        GeoLocationWrite geo1 = new GeoLocationWrite(40.7128, -74.0060);
+        GeoLocationWrite geo2 = new GeoLocationWrite(40.7128, -74.0060);
+        GeoLocationWrite geo3 = new GeoLocationWrite(40.7128, -74.0060);
+
+        assertEquals(geo1, geo2);
+        assertEquals(geo2, geo3);
+        assertEquals(geo1, geo3);
+    }
+
+    @Test
+    void hashCode_shouldBeDifferentForDifferentObjects() {
+        GeoLocationWrite geo1 = new GeoLocationWrite(40.7128, -74.0060);
+        GeoLocationWrite geo2 = new GeoLocationWrite(51.5074, -0.1278);
+
+        assertNotEquals(geo1.hashCode(), geo2.hashCode());
+    }
+
+    @Test
+    void hashCode_shouldBeConsistentOnMultipleCalls() {
+        GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
+
+        int firstHashCode = geoLocation.hashCode();
+        int secondHashCode = geoLocation.hashCode();
+
+        assertEquals(firstHashCode, secondHashCode);
+    }
+
+    @Test
+    void hashCode_shouldChangeWhenObjectIsModified() {
+        GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
+        int originalHashCode = geoLocation.hashCode();
+
+        geoLocation.setLatitude(51.5074);
+
+        int newHashCode = geoLocation.hashCode();
+        assertNotEquals(originalHashCode, newHashCode);
+    }
 }
