@@ -2,7 +2,7 @@ version: '3.8'
 services:
   firestore:
     image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
-    command: gcloud emulators firestore start --project=local-project --host-port=0.0.0.0:8695
+    command: gcloud emulators firestore start --database-mode=firestore-native --project=local-project --host-port=0.0.0.0:8695
     ports:
       - "8695:8695"
 

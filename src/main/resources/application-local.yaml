@@ -28,3 +28,4 @@ spring:
         emulator:
           enabled: true
         host-port: ${FIRESTORE_EMULATOR_HOST:localhost:8695}
+        project-id: local-project
