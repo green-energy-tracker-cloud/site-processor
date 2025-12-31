@@ -7,11 +7,26 @@ import org.mapstruct.Mapper;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Date;
 import java.util.UUID;
 
 @Mapper(componentModel = "spring")
 public interface SiteMapper {
     SiteResponseDto toDto(SiteWriteDocument entity);
+
+    default OffsetDateTime map(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return OffsetDateTime.ofInstant(date.toInstant(), ZoneOffset.UTC);
+    }
+
+    default Date map(OffsetDateTime offsetDateTime) {
+        if (offsetDateTime == null) {
+            return null;
+        }
+        return Date.from(offsetDateTime.toInstant());
+    }
 
     default OffsetDateTime timestampToOffsetDateTime(Timestamp timestamp) {
         if (timestamp == null) {

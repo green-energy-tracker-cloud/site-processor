@@ -1,6 +1,5 @@
 package com.green.energy.tracker.cloud.site_processor.service;
 
-import com.google.cloud.Timestamp;
 import com.green.energy.tracker.cloud.common.v1.GeoLocation;
 import com.green.energy.tracker.cloud.site.v1.Site;
 import com.green.energy.tracker.cloud.site_processor.model.GeoLocationWrite;
@@ -8,7 +7,6 @@ import com.green.energy.tracker.cloud.site_processor.model.SiteMapper;
 import com.green.energy.tracker.cloud.site_processor.model.SiteWriteDocument;
 import com.green.energy.tracker.cloud.site_processor.repository.SiteRepository;
 import com.green.energy.tracker.cloud.sitebff.web.model.SiteResponseDto;
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
@@ -17,13 +15,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cloud.client.circuitbreaker.NoFallbackAvailableException;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
+import java.util.Date;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,8 +91,8 @@ class SiteServiceImplTest {
             assertThat(doc.getAddress()).isEqualTo(site.getAddress());
             assertThat(doc.getLocation().getLatitude()).isEqualTo(site.getLocation().getLatitude());
             assertThat(doc.getLocation().getLongitude()).isEqualTo(site.getLocation().getLongitude());
-            assertThat(doc.getCreatedAt()).isNotNull();
-            assertThat(doc.getUpdatedAt()).isNotNull();
+            assertThat(doc.getCreatedAt()).isNull();
+            assertThat(doc.getUpdatedAt()).isNull();
             return Mono.just(savedDocument);
         });
         when(cbFirestore.run(any(Mono.class), any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -235,8 +233,8 @@ class SiteServiceImplTest {
                         .latitude(40.7128)
                         .longitude(-74.0060)
                         .build())
-                .createdAt(Timestamp.now())
-                .updatedAt(Timestamp.now())
+                .createdAt(new Date())
+                .updatedAt(new Date())
                 .build();
     }
 }

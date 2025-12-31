@@ -1,6 +1,6 @@
 package com.green.energy.tracker.cloud.site_processor.model;
 
-import com.google.cloud.Timestamp;
+import java.util.Date;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -9,7 +9,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void builder_shouldCreateDocumentWithAllFields() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = GeoLocationWrite.builder()
             .latitude(40.7128)
             .longitude(-74.0060)
@@ -51,7 +51,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void allArgsConstructor_shouldCreateDocumentWithAllFields() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
 
         SiteWriteDocument document = new SiteWriteDocument(
@@ -77,7 +77,7 @@ class SiteWriteDocumentTest {
     @Test
     void settersAndGetters_shouldWorkCorrectly() {
         SiteWriteDocument document = new SiteWriteDocument();
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(51.5074, -0.1278);
 
         document.setId("new-id");
@@ -99,7 +99,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void equals_shouldReturnTrueForSameContent() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
 
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
@@ -127,7 +127,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void equals_shouldReturnFalseForDifferentContent() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
 
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
@@ -145,7 +145,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void hashCode_shouldBeConsistentWithEquals() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
 
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
@@ -173,7 +173,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void toString_shouldContainAllFields() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
 
         SiteWriteDocument document = SiteWriteDocument.builder()
@@ -352,8 +352,8 @@ class SiteWriteDocumentTest {
 
     @Test
     void equals_shouldReturnFalseForDifferentCreatedAt() {
-        Timestamp time1 = Timestamp.ofTimeSecondsAndNanos(1000, 0);
-        Timestamp time2 = Timestamp.ofTimeSecondsAndNanos(2000, 0);
+        Date time1 = new Date(1000 * 1000);
+        Date time2 = new Date(2000 * 1000);
 
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
@@ -369,8 +369,8 @@ class SiteWriteDocumentTest {
 
     @Test
     void equals_shouldReturnFalseForDifferentUpdatedAt() {
-        Timestamp time1 = Timestamp.ofTimeSecondsAndNanos(1000, 0);
-        Timestamp time2 = Timestamp.ofTimeSecondsAndNanos(2000, 0);
+        Date time1 = new Date(1000 * 1000);
+        Date time2 = new Date(2000 * 1000);
 
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
@@ -386,7 +386,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void equals_shouldBeSymmetric() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
 
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
@@ -414,7 +414,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void equals_shouldBeTransitive() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
 
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
@@ -469,7 +469,7 @@ class SiteWriteDocumentTest {
 
     @Test
     void hashCode_shouldBeConsistentOnMultipleCalls() {
-        Timestamp now = Timestamp.now();
+        Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
 
         SiteWriteDocument document = SiteWriteDocument.builder()
@@ -560,7 +560,7 @@ class SiteWriteDocumentTest {
     @Test
     void setCreatedAt_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
-        Timestamp newTime = Timestamp.now();
+        Date newTime = new Date();
 
         document.setCreatedAt(newTime);
 
@@ -570,7 +570,7 @@ class SiteWriteDocumentTest {
     @Test
     void setUpdatedAt_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
-        Timestamp newTime = Timestamp.now();
+        Date newTime = new Date();
 
         document.setUpdatedAt(newTime);
 
