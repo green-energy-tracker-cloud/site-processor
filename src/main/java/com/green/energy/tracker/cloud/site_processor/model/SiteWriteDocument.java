@@ -1,13 +1,15 @@
 package com.green.energy.tracker.cloud.site_processor.model;
 
 
-import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.annotation.DocumentId;
+import com.google.cloud.firestore.annotation.ServerTimestamp;
 import com.google.cloud.spring.data.firestore.Document;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Date;
 
 @Data
 @Builder
@@ -22,6 +24,8 @@ public class SiteWriteDocument {
     private String userId;
     private String address;
     private GeoLocationWrite location;
-    private Timestamp createdAt;
-    private Timestamp updatedAt;
+    @ServerTimestamp
+    private Date createdAt;
+    @ServerTimestamp
+    private Date updatedAt;
 }

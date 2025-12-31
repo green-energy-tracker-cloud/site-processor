@@ -62,8 +62,6 @@ public class SiteServiceImpl implements SiteService{
                 .userId(site.getUserId())
                 .address(site.getAddress())
                 .location(GeoLocationWrite.builder().latitude(site.getLocation().getLatitude()).longitude(site.getLocation().getLongitude()).build())
-                .createdAt(Timestamp.now())
-                .updatedAt(Timestamp.now())
                 .build();
     }
 
