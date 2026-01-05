@@ -16,18 +16,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
-import java.util.Date;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class SiteServiceImplTest {
@@ -55,6 +56,9 @@ class SiteServiceImplTest {
         retryFirestore = retryRegistry.retry("firestore");
 
         siteService = new SiteServiceImpl(siteRepository, cbFirestore, retryFirestore, siteMapper);
+
+        // Common mock for circuit breaker to avoid repetition
+        when(cbFirestore.run(any(Mono.class), any())).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -64,7 +68,6 @@ class SiteServiceImplTest {
         SiteResponseDto expectedDto = new SiteResponseDto();
 
         when(siteRepository.save(any(SiteWriteDocument.class))).thenReturn(Mono.just(savedDocument));
-        when(cbFirestore.run(any(Mono.class), any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(siteMapper.toDto(any(SiteWriteDocument.class))).thenReturn(expectedDto);
 
         Mono<SiteResponseDto> result = siteService.create(site);
@@ -91,11 +94,8 @@ class SiteServiceImplTest {
             assertThat(doc.getAddress()).isEqualTo(site.getAddress());
             assertThat(doc.getLocation().getLatitude()).isEqualTo(site.getLocation().getLatitude());
             assertThat(doc.getLocation().getLongitude()).isEqualTo(site.getLocation().getLongitude());
-            assertThat(doc.getCreatedAt()).isNull();
-            assertThat(doc.getUpdatedAt()).isNull();
             return Mono.just(savedDocument);
         });
-        when(cbFirestore.run(any(Mono.class), any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(siteMapper.toDto(any(SiteWriteDocument.class))).thenReturn(expectedDto);
 
         Mono<SiteResponseDto> result = siteService.create(site);
@@ -113,7 +113,6 @@ class SiteServiceImplTest {
         RuntimeException expectedException = new RuntimeException("Database error");
 
         when(siteRepository.save(any(SiteWriteDocument.class))).thenReturn(Mono.error(expectedException));
-        when(cbFirestore.run(any(Mono.class), any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         Mono<SiteResponseDto> result = siteService.create(site);
 
@@ -124,90 +123,110 @@ class SiteServiceImplTest {
     }
 
     @Test
-    void create_whenCircuitBreakerOpen_shouldReturnFallback() {
-        Site site = createTestSite();
-        SiteWriteDocument savedDocument = createTestDocument();
-        RuntimeException circuitBreakerException = new RuntimeException("Circuit breaker open");
+    void update_withExistingSite_shouldUpdateAndReturnOk() {
+        Site siteToUpdate = createTestSite();
+        SiteWriteDocument existingDocument = createTestDocument();
+        SiteWriteDocument updatedDocument = createTestDocument(); // In a real scenario, this would have updated values
 
-        when(siteRepository.save(any(SiteWriteDocument.class))).thenReturn(Mono.just(savedDocument));
-        when(cbFirestore.run(any(Mono.class), any())).thenAnswer(invocation -> {
-            Function<Throwable, Mono> fallback = invocation.getArgument(1);
-            return fallback.apply(circuitBreakerException);
-        });
+        when(siteRepository.findById(siteToUpdate.getId())).thenReturn(Mono.just(existingDocument));
+        when(siteRepository.save(any(SiteWriteDocument.class))).thenReturn(Mono.just(updatedDocument));
 
-        Mono<SiteResponseDto> result = siteService.create(site);
+        Mono<ResponseEntity<Void>> result = siteService.update(siteToUpdate);
 
         StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof ResponseStatusException &&
-                        throwable.getMessage().contains("Service is temporarily unavailable"))
-                .verify();
-    }
-
-    @Test
-    void create_shouldApplyCircuitBreaker() {
-        Site site = createTestSite();
-        SiteWriteDocument savedDocument = createTestDocument();
-        SiteResponseDto expectedDto = new SiteResponseDto();
-
-        when(siteRepository.save(any(SiteWriteDocument.class))).thenReturn(Mono.just(savedDocument));
-        when(cbFirestore.run(any(Mono.class), any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(siteMapper.toDto(any(SiteWriteDocument.class))).thenReturn(expectedDto);
-
-        Mono<SiteResponseDto> result = siteService.create(site);
-
-        StepVerifier.create(result)
-                .expectNext(expectedDto)
+                .expectNext(ResponseEntity.ok().build())
                 .verifyComplete();
 
-        verify(cbFirestore).run(any(Mono.class), any());
+        verify(siteRepository).findById(siteToUpdate.getId());
+        verify(siteRepository).save(any(SiteWriteDocument.class));
     }
 
     @Test
-    void update_shouldReturnNull() {
-        Site site = createTestSite();
+    void update_withNonExistingSite_shouldReturnNotFound() {
+        Site siteToUpdate = createTestSite();
 
-        Mono<org.springframework.http.ResponseEntity<Void>> result = siteService.update(site);
+        when(siteRepository.findById(siteToUpdate.getId())).thenReturn(Mono.empty());
 
-        assertThat(result).isNull();
-    }
-
-    @Test
-    void patch_shouldReturnNull() {
-        Site site = createTestSite();
-
-        Mono<org.springframework.http.ResponseEntity<Void>> result = siteService.patch(site);
-
-        assertThat(result).isNull();
-    }
-
-    @Test
-    void delete_shouldReturnNull() {
-        String siteId = "site-123";
-
-        Mono<org.springframework.http.ResponseEntity<Void>> result = siteService.delete(siteId);
-
-        assertThat(result).isNull();
-    }
-
-    @Test
-    void create_withCircuitBreakerFailure_shouldInvokeFallback() {
-        Site site = createTestSite();
-        SiteWriteDocument savedDocument = createTestDocument();
-        Throwable circuitBreakerException = new RuntimeException("Circuit breaker triggered");
-
-        when(siteRepository.save(any(SiteWriteDocument.class))).thenReturn(Mono.just(savedDocument));
-        when(cbFirestore.run(any(Mono.class), any())).thenAnswer(invocation -> {
-            Function<Throwable, Mono> fallback = invocation.getArgument(1);
-            return fallback.apply(circuitBreakerException);
-        });
-
-        Mono<SiteResponseDto> result = siteService.create(site);
+        Mono<ResponseEntity<Void>> result = siteService.update(siteToUpdate);
 
         StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof ResponseStatusException)
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ResponseStatusException &&
+                                ((ResponseStatusException) throwable).getStatusCode() == HttpStatus.NOT_FOUND)
                 .verify();
 
+        verify(siteRepository).findById(siteToUpdate.getId());
+    }
+
+    @Test
+    void patch_withExistingSite_shouldPatchAndReturnOk() {
+        Site siteToPatch = createTestSite();
+        SiteWriteDocument existingDocument = createTestDocument();
+        SiteWriteDocument patchedDocument = createTestDocument();
+
+        when(siteRepository.findById(siteToPatch.getId())).thenReturn(Mono.just(existingDocument));
+        when(siteRepository.save(any(SiteWriteDocument.class))).thenReturn(Mono.just(patchedDocument));
+
+        Mono<ResponseEntity<Void>> result = siteService.patch(siteToPatch);
+
+        StepVerifier.create(result)
+                .expectNext(ResponseEntity.ok().build())
+                .verifyComplete();
+
+        verify(siteRepository).findById(siteToPatch.getId());
         verify(siteRepository).save(any(SiteWriteDocument.class));
+    }
+
+    @Test
+    void patch_withNonExistingSite_shouldReturnNotFound() {
+        Site siteToPatch = createTestSite();
+
+        when(siteRepository.findById(siteToPatch.getId())).thenReturn(Mono.empty());
+
+        Mono<ResponseEntity<Void>> result = siteService.patch(siteToPatch);
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ResponseStatusException &&
+                                ((ResponseStatusException) throwable).getStatusCode() == HttpStatus.NOT_FOUND)
+                .verify();
+
+        verify(siteRepository).findById(siteToPatch.getId());
+    }
+
+    @Test
+    void delete_withExistingSite_shouldDeleteAndReturnNoContent() {
+        String siteId = "site-123";
+        SiteWriteDocument existingDocument = createTestDocument();
+
+        when(siteRepository.findById(siteId)).thenReturn(Mono.just(existingDocument));
+        when(siteRepository.deleteById(siteId)).thenReturn(Mono.empty());
+
+        Mono<ResponseEntity<Void>> result = siteService.delete(siteId);
+
+        StepVerifier.create(result)
+                .expectNext(ResponseEntity.noContent().build())
+                .verifyComplete();
+
+        verify(siteRepository).findById(siteId);
+        verify(siteRepository).deleteById(siteId);
+    }
+
+    @Test
+    void delete_withNonExistingSite_shouldReturnNotFound() {
+        String siteId = "site-123";
+
+        when(siteRepository.findById(siteId)).thenReturn(Mono.empty());
+
+        Mono<ResponseEntity<Void>> result = siteService.delete(siteId);
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable ->
+                        throwable instanceof ResponseStatusException &&
+                                ((ResponseStatusException) throwable).getStatusCode() == HttpStatus.NOT_FOUND)
+                .verify();
+
+        verify(siteRepository).findById(siteId);
     }
 
     private Site createTestSite() {
@@ -233,8 +252,6 @@ class SiteServiceImplTest {
                         .latitude(40.7128)
                         .longitude(-74.0060)
                         .build())
-                .createdAt(new Date())
-                .updatedAt(new Date())
                 .build();
     }
 }

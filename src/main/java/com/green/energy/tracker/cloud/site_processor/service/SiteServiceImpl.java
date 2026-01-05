@@ -95,7 +95,7 @@ public class SiteServiceImpl implements SiteService{
 
     private <T> Mono<T> fallbackCircuitBreaker(Mono<T> it, ReactiveCircuitBreaker cb, String cbId,  String eventType){
         return cb.run(it, throwable -> {
-            log.error("{} Circuit Breaker is open for event type {}. Fallback initiated.", cbId, eventType, throwable);
+            log.error("{} Circuit Breaker is open for event type {}. Fallback initiated: {}", cbId, eventType, throwable.getMessage());
             return Mono.error(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Service is temporarily unavailable."));
         });
     }
