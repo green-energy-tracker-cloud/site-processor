@@ -1,15 +1,12 @@
 package com.green.energy.tracker.cloud.site_processor.model;
 
-import com.google.cloud.Timestamp;
-import com.green.energy.tracker.cloud.sitebff.web.model.SiteResponseDto;
+import com.green.energy.tracker.cloud.common.v1.GeoLocation;
+import com.green.energy.tracker.cloud.site.v1.Site;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.UUID;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,144 +19,194 @@ class SiteMapperTest {
         siteMapper = Mappers.getMapper(SiteMapper.class);
     }
 
-
     @Test
-    void toDto_withNullDocument_shouldReturnNull() {
-        SiteResponseDto result = siteMapper.toDto(null);
-        assertNull(result);
-    }
+    void updateDoc_shouldUpdateAllFieldsExceptIgnored() {
+        Site site = Site.newBuilder()
+                .setId("new-site-id")
+                .setName("Updated Name")
+                .setUserId("updated-user-123")
+                .setAddress("Updated Address")
+                .setLocation(GeoLocation.newBuilder()
+                        .setLatitude(45.0)
+                        .setLongitude(-75.0)
+                        .build())
+                .build();
 
-    @Test
-    void timestampToOffsetDateTime_shouldConvertCorrectly() {
-        long seconds = 1609459200L;
-        int nanos = 123456789;
-        Timestamp timestamp = Timestamp.ofTimeSecondsAndNanos(seconds, nanos);
+        SiteWriteDocument existingDoc = SiteWriteDocument.builder()
+                .id("original-id")
+                .name("Original Name")
+                .userId("original-user")
+                .address("Original Address")
+                .location(GeoLocationWrite.builder()
+                        .latitude(40.0)
+                        .longitude(-74.0)
+                        .build())
+                .createdAt(new Date(1000000))
+                .updatedAt(new Date(2000000))
+                .build();
 
-        OffsetDateTime result = siteMapper.timestampToOffsetDateTime(timestamp);
+        SiteWriteDocument result = siteMapper.updateDoc(site, existingDoc);
 
         assertNotNull(result);
-        assertEquals(seconds, result.toEpochSecond());
-        assertEquals(nanos, result.getNano());
-        assertEquals(ZoneOffset.UTC, result.getOffset());
+        assertEquals("original-id", result.getId()); // Should NOT be updated
+        assertEquals("Updated Name", result.getName());
+        assertEquals("updated-user-123", result.getUserId());
+        assertEquals("Updated Address", result.getAddress());
+        assertNotNull(result.getLocation());
+        assertEquals(45.0, result.getLocation().getLatitude());
+        assertEquals(-75.0, result.getLocation().getLongitude());
+        assertEquals(new Date(1000000), result.getCreatedAt()); // Should NOT be updated
+        assertEquals(new Date(2000000), result.getUpdatedAt()); // Should NOT be updated
     }
 
     @Test
-    void timestampToOffsetDateTime_withNullTimestamp_shouldReturnNull() {
-        OffsetDateTime result = siteMapper.timestampToOffsetDateTime(null);
-        assertNull(result);
-    }
+    void updateDoc_shouldHandleLocationUpdate() {
+        Site site = Site.newBuilder()
+                .setId("site-123")
+                .setName("Test Site")
+                .setUserId("user-456")
+                .setAddress("Test Address")
+                .setLocation(GeoLocation.newBuilder()
+                        .setLatitude(50.5)
+                        .setLongitude(-80.5)
+                        .build())
+                .build();
 
-    @Test
-    void timestampToOffsetDateTime_withZeroTimestamp_shouldConvertCorrectly() {
-        Timestamp timestamp = Timestamp.ofTimeSecondsAndNanos(0, 0);
+        SiteWriteDocument existingDoc = SiteWriteDocument.builder()
+                .id("site-123")
+                .name("Old Name")
+                .userId("old-user")
+                .address("Old Address")
+                .location(GeoLocationWrite.builder()
+                        .latitude(30.0)
+                        .longitude(-70.0)
+                        .build())
+                .build();
 
-        OffsetDateTime result = siteMapper.timestampToOffsetDateTime(timestamp);
+        SiteWriteDocument result = siteMapper.updateDoc(site, existingDoc);
 
         assertNotNull(result);
-        assertEquals(0, result.toEpochSecond());
-        assertEquals(0, result.getNano());
+        assertNotNull(result.getLocation());
+        assertEquals(50.5, result.getLocation().getLatitude());
+        assertEquals(-80.5, result.getLocation().getLongitude());
     }
 
     @Test
-    void offsetDateTimeToTimestamp_shouldConvertCorrectly() {
-        Instant instant = Instant.ofEpochSecond(1609459200L, 123456789);
-        OffsetDateTime offsetDateTime = OffsetDateTime.ofInstant(instant, ZoneOffset.UTC);
+    void updateDoc_shouldCreateLocationIfNotExists() {
+        Site site = Site.newBuilder()
+                .setId("site-123")
+                .setName("Test Site")
+                .setUserId("user-456")
+                .setAddress("Test Address")
+                .setLocation(GeoLocation.newBuilder()
+                        .setLatitude(35.0)
+                        .setLongitude(-85.0)
+                        .build())
+                .build();
 
-        Timestamp result = siteMapper.offsetDateTimeToTimestamp(offsetDateTime);
+        SiteWriteDocument existingDoc = SiteWriteDocument.builder()
+                .id("site-123")
+                .name("Old Name")
+                .userId("old-user")
+                .address("Old Address")
+                .location(null)
+                .build();
+
+        SiteWriteDocument result = siteMapper.updateDoc(site, existingDoc);
 
         assertNotNull(result);
-        assertEquals(1609459200L, result.getSeconds());
-        assertEquals(123456789, result.getNanos());
+        assertNotNull(result.getLocation());
+        assertEquals(35.0, result.getLocation().getLatitude());
+        assertEquals(-85.0, result.getLocation().getLongitude());
     }
 
     @Test
-    void offsetDateTimeToTimestamp_withNullOffsetDateTime_shouldReturnNull() {
-        Timestamp result = siteMapper.offsetDateTimeToTimestamp(null);
-        assertNull(result);
-    }
+    void updateDoc_shouldSetLocationToNullWhenSiteHasNoLocation() {
+        Site site = Site.newBuilder()
+                .setId("site-123")
+                .setName("Test Site")
+                .setUserId("user-456")
+                .setAddress("Test Address")
+                .build(); // No location set
 
-    @Test
-    void offsetDateTimeToTimestamp_withDifferentTimezone_shouldConvertToUTC() {
-        Instant instant = Instant.ofEpochSecond(1609459200L);
-        OffsetDateTime offsetDateTime = OffsetDateTime.ofInstant(instant, ZoneOffset.ofHours(5));
+        SiteWriteDocument existingDoc = SiteWriteDocument.builder()
+                .id("site-123")
+                .name("Old Name")
+                .userId("old-user")
+                .address("Old Address")
+                .location(GeoLocationWrite.builder()
+                        .latitude(30.0)
+                        .longitude(-70.0)
+                        .build())
+                .build();
 
-        Timestamp result = siteMapper.offsetDateTimeToTimestamp(offsetDateTime);
+        SiteWriteDocument result = siteMapper.updateDoc(site, existingDoc);
 
         assertNotNull(result);
-        assertEquals(1609459200L, result.getSeconds());
+        assertNull(result.getLocation());
     }
 
     @Test
-    void stringToUuid_shouldConvertValidUuidString() {
-        String uuidString = "123e4567-e89b-12d3-a456-426614174000";
+    void updateDoc_withNullSite_shouldReturnDocument() {
+        SiteWriteDocument existingDoc = SiteWriteDocument.builder()
+                .id("site-123")
+                .name("Name")
+                .userId("user-456")
+                .address("Address")
+                .build();
 
-        UUID result = siteMapper.stringToUuid(uuidString);
+        SiteWriteDocument result = siteMapper.updateDoc(null, existingDoc);
 
         assertNotNull(result);
-        assertEquals(uuidString, result.toString());
+        assertEquals(existingDoc, result);
     }
 
     @Test
-    void stringToUuid_withNullString_shouldReturnNull() {
-        UUID result = siteMapper.stringToUuid(null);
-        assertNull(result);
-    }
+    void updateDoc_shouldPreserveTimestampFields() {
+        Date createdDate = new Date(System.currentTimeMillis() - 100000);
+        Date updatedDate = new Date(System.currentTimeMillis() - 50000);
 
-    @Test
-    void stringToUuid_withInvalidString_shouldThrowException() {
-        String invalidUuid = "invalid-uuid";
+        Site site = Site.newBuilder()
+                .setId("site-123")
+                .setName("New Name")
+                .setUserId("new-user")
+                .setAddress("New Address")
+                .build();
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            siteMapper.stringToUuid(invalidUuid);
-        });
-    }
+        SiteWriteDocument existingDoc = SiteWriteDocument.builder()
+                .id("original-id")
+                .name("Original Name")
+                .userId("original-user")
+                .address("Original Address")
+                .createdAt(createdDate)
+                .updatedAt(updatedDate)
+                .build();
 
-    @Test
-    void uuidToString_shouldConvertValidUuid() {
-        UUID uuid = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
-
-        String result = siteMapper.uuidToString(uuid);
+        SiteWriteDocument result = siteMapper.updateDoc(site, existingDoc);
 
         assertNotNull(result);
-        assertEquals("123e4567-e89b-12d3-a456-426614174000", result);
+        assertSame(createdDate, result.getCreatedAt());
+        assertSame(updatedDate, result.getUpdatedAt());
     }
 
     @Test
-    void uuidToString_withNullUuid_shouldReturnNull() {
-        String result = siteMapper.uuidToString(null);
-        assertNull(result);
-    }
+    void updateDoc_shouldReturnSameDocumentInstance() {
+        Site site = Site.newBuilder()
+                .setId("site-123")
+                .setName("Name")
+                .setUserId("user-456")
+                .setAddress("Address")
+                .build();
 
-    @Test
-    void uuidToString_withRandomUuid_shouldReturnValidString() {
-        UUID uuid = UUID.randomUUID();
+        SiteWriteDocument existingDoc = SiteWriteDocument.builder()
+                .id("site-123")
+                .name("Old Name")
+                .userId("old-user")
+                .address("Old Address")
+                .build();
 
-        String result = siteMapper.uuidToString(uuid);
+        SiteWriteDocument result = siteMapper.updateDoc(site, existingDoc);
 
-        assertNotNull(result);
-        assertEquals(uuid.toString(), result);
-    }
-
-    @Test
-    void roundTripConversion_timestampToOffsetDateTimeAndBack_shouldPreserveValue() {
-        Timestamp originalTimestamp = Timestamp.ofTimeSecondsAndNanos(1609459200L, 123456789);
-
-        OffsetDateTime offsetDateTime = siteMapper.timestampToOffsetDateTime(originalTimestamp);
-        Timestamp resultTimestamp = siteMapper.offsetDateTimeToTimestamp(offsetDateTime);
-
-        assertNotNull(resultTimestamp);
-        assertEquals(originalTimestamp.getSeconds(), resultTimestamp.getSeconds());
-        assertEquals(originalTimestamp.getNanos(), resultTimestamp.getNanos());
-    }
-
-    @Test
-    void roundTripConversion_uuidToStringAndBack_shouldPreserveValue() {
-        UUID originalUuid = UUID.randomUUID();
-
-        String uuidString = siteMapper.uuidToString(originalUuid);
-        UUID resultUuid = siteMapper.stringToUuid(uuidString);
-
-        assertNotNull(resultUuid);
-        assertEquals(originalUuid, resultUuid);
+        assertSame(existingDoc, result); // @MappingTarget should return the same instance
     }
 }

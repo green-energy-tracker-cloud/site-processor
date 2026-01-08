@@ -1,7 +1,6 @@
 package com.green.energy.tracker.cloud.site_processor.events;
 
 import com.green.energy.tracker.cloud.site_processor.service.CloudEventManagementService;
-import com.green.energy.tracker.cloud.sitebff.web.model.SiteResponseDto;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,12 +15,10 @@ import reactor.test.StepVerifier;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ControllerSiteEventsTest {
@@ -37,23 +34,20 @@ class ControllerSiteEventsTest {
     }
 
     @Test
-    void handleSiteEvents_withValidEvent_shouldReturnAcceptedResponse() throws IOException {
+    void handleSiteEvents_withValidCloudEvent_shouldDelegateToServiceAndReturnResponse() throws IOException {
         CloudEvent cloudEvent = createTestCloudEvent();
-        SiteResponseDto siteResponseDto = new SiteResponseDto();
-        siteResponseDto.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
-        siteResponseDto.setName("Test Site");
+        ResponseEntity<Void> expectedResponse = ResponseEntity.status(HttpStatus.OK).build();
 
-        when(cloudEventManagementService.handleSiteEvents(any(CloudEvent.class)))
-                .thenReturn(Mono.just(siteResponseDto));
+        when(cloudEventManagementService.handleSiteEvents(cloudEvent))
+                .thenReturn(Mono.just(expectedResponse));
 
-        Mono<ResponseEntity<SiteResponseDto>> result = controller.handleSiteEvents(cloudEvent);
+        Mono<ResponseEntity<Void>> result = controller.handleSiteEvents(cloudEvent);
 
         StepVerifier.create(result)
                 .assertNext(response -> {
-                    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-                    assertThat(response.getBody()).isNotNull();
-                    assertThat(response.getBody().getId()).isEqualTo(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
-                    assertThat(response.getBody().getName()).isEqualTo("Test Site");
+                    assertThat(response).isNotNull();
+                    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                    assertThat(response.getBody()).isNull();
                 })
                 .verifyComplete();
 
@@ -67,7 +61,7 @@ class ControllerSiteEventsTest {
         when(cloudEventManagementService.handleSiteEvents(any(CloudEvent.class)))
                 .thenReturn(Mono.empty());
 
-        Mono<ResponseEntity<SiteResponseDto>> result = controller.handleSiteEvents(cloudEvent);
+        Mono<ResponseEntity<Void>> result = controller.handleSiteEvents(cloudEvent);
 
         StepVerifier.create(result)
                 .verifyComplete();
@@ -78,79 +72,95 @@ class ControllerSiteEventsTest {
     @Test
     void handleSiteEvents_whenServiceThrowsError_shouldPropagateError() throws IOException {
         CloudEvent cloudEvent = createTestCloudEvent();
-        RuntimeException expectedException = new RuntimeException("Service error");
+        RuntimeException expectedException = new RuntimeException("Service processing error");
 
         when(cloudEventManagementService.handleSiteEvents(any(CloudEvent.class)))
                 .thenReturn(Mono.error(expectedException));
 
-        Mono<ResponseEntity<SiteResponseDto>> result = controller.handleSiteEvents(cloudEvent);
+        Mono<ResponseEntity<Void>> result = controller.handleSiteEvents(cloudEvent);
 
         StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
-                        throwable.getMessage().equals("Service error"))
+                .expectErrorMatches(throwable ->
+                    throwable instanceof RuntimeException &&
+                    throwable.getMessage().equals("Service processing error"))
                 .verify();
 
         verify(cloudEventManagementService).handleSiteEvents(cloudEvent);
     }
 
     @Test
-    void handleSiteEvents_shouldReturnHttpStatusAccepted() throws IOException {
+    void handleSiteEvents_withAcceptedStatus_shouldReturnCorrectStatusCode() throws IOException {
         CloudEvent cloudEvent = createTestCloudEvent();
-        SiteResponseDto siteResponseDto = new SiteResponseDto();
+        ResponseEntity<Void> expectedResponse = ResponseEntity.status(HttpStatus.ACCEPTED).build();
 
         when(cloudEventManagementService.handleSiteEvents(any(CloudEvent.class)))
-                .thenReturn(Mono.just(siteResponseDto));
+                .thenReturn(Mono.just(expectedResponse));
 
-        Mono<ResponseEntity<SiteResponseDto>> result = controller.handleSiteEvents(cloudEvent);
+        Mono<ResponseEntity<Void>> result = controller.handleSiteEvents(cloudEvent);
 
         StepVerifier.create(result)
                 .assertNext(response -> {
                     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
                     assertThat(response.getStatusCodeValue()).isEqualTo(202);
+                    assertThat(response.getBody()).isNull();
                 })
                 .verifyComplete();
     }
 
     @Test
-    void handleSiteEvents_shouldInvokeServiceWithProvidedEvent() throws IOException {
-        CloudEvent cloudEvent = createTestCloudEvent();
-        SiteResponseDto siteResponseDto = new SiteResponseDto();
+    void handleSiteEvents_shouldPassEventUnmodifiedToService() throws IOException {
+        CloudEvent cloudEvent = createTestCloudEventWithId("specific-event-123");
+        ResponseEntity<Void> expectedResponse = ResponseEntity.ok().build();
 
         when(cloudEventManagementService.handleSiteEvents(cloudEvent))
-                .thenReturn(Mono.just(siteResponseDto));
+                .thenReturn(Mono.just(expectedResponse));
 
-        Mono<ResponseEntity<SiteResponseDto>> result = controller.handleSiteEvents(cloudEvent);
-
-        StepVerifier.create(result)
-                .expectNextCount(1)
-                .verifyComplete();
+        controller.handleSiteEvents(cloudEvent);
 
         verify(cloudEventManagementService).handleSiteEvents(cloudEvent);
+        verifyNoMoreInteractions(cloudEventManagementService);
     }
 
     @Test
-    void handleSiteEvents_withMultipleRequests_shouldHandleEachIndependently() throws IOException {
-        CloudEvent cloudEvent1 = createTestCloudEventWithId("event-1");
-        CloudEvent cloudEvent2 = createTestCloudEventWithId("event-2");
-        SiteResponseDto response1 = new SiteResponseDto();
-        response1.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174001"));
-        SiteResponseDto response2 = new SiteResponseDto();
-        response2.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174002"));
+    void handleSiteEvents_withMultipleRequests_shouldHandleIndependently() throws IOException {
+        CloudEvent event1 = createTestCloudEventWithId("event-1");
+        CloudEvent event2 = createTestCloudEventWithId("event-2");
 
-        when(cloudEventManagementService.handleSiteEvents(cloudEvent1))
+        ResponseEntity<Void> response1 = ResponseEntity.ok().build();
+        ResponseEntity<Void> response2 = ResponseEntity.status(HttpStatus.ACCEPTED).build();
+
+        when(cloudEventManagementService.handleSiteEvents(event1))
                 .thenReturn(Mono.just(response1));
-        when(cloudEventManagementService.handleSiteEvents(cloudEvent2))
+        when(cloudEventManagementService.handleSiteEvents(event2))
                 .thenReturn(Mono.just(response2));
 
-        Mono<ResponseEntity<SiteResponseDto>> result1 = controller.handleSiteEvents(cloudEvent1);
-        Mono<ResponseEntity<SiteResponseDto>> result2 = controller.handleSiteEvents(cloudEvent2);
+        Mono<ResponseEntity<Void>> result1 = controller.handleSiteEvents(event1);
+        Mono<ResponseEntity<Void>> result2 = controller.handleSiteEvents(event2);
 
         StepVerifier.create(result1)
-                .assertNext(response -> assertThat(response.getBody().getId()).isEqualTo(UUID.fromString("123e4567-e89b-12d3-a456-426614174001")))
+                .assertNext(response -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK))
                 .verifyComplete();
 
         StepVerifier.create(result2)
-                .assertNext(response -> assertThat(response.getBody().getId()).isEqualTo(UUID.fromString("123e4567-e89b-12d3-a456-426614174002")))
+                .assertNext(response -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED))
+                .verifyComplete();
+    }
+
+    @Test
+    void handleSiteEvents_shouldReturnResponseWithNoBody() throws IOException {
+        CloudEvent cloudEvent = createTestCloudEvent();
+        ResponseEntity<Void> expectedResponse = ResponseEntity.status(HttpStatus.OK).build();
+
+        when(cloudEventManagementService.handleSiteEvents(any(CloudEvent.class)))
+                .thenReturn(Mono.just(expectedResponse));
+
+        Mono<ResponseEntity<Void>> result = controller.handleSiteEvents(cloudEvent);
+
+        StepVerifier.create(result)
+                .assertNext(response -> {
+                    assertThat(response.hasBody()).isFalse();
+                    assertThat(response.getBody()).isNull();
+                })
                 .verifyComplete();
     }
 

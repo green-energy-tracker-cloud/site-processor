@@ -5,15 +5,12 @@ import com.green.energy.tracker.cloud.site_processor.model.GeoLocationWrite;
 import com.green.energy.tracker.cloud.site_processor.model.SiteMapper;
 import com.green.energy.tracker.cloud.site_processor.model.SiteWriteDocument;
 import com.green.energy.tracker.cloud.site_processor.repository.SiteRepository;
-import com.green.energy.tracker.cloud.sitebff.web.model.SiteResponseDto;
 import io.github.resilience4j.reactor.retry.RetryOperator;
 import io.github.resilience4j.retry.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
@@ -30,57 +27,36 @@ public class SiteServiceImpl implements SiteService{
     private final SiteMapper siteMapper;
 
     @Override
-    @CacheEvict(value = "sites", key = "#site.id")
-    public Mono<SiteResponseDto> create(Site site) {
+    public Mono<Void> create(Site site) {
         var siteWriteDocument = buildDocument(site);
-        log.info("Create: site document to write: {}", siteWriteDocument);
         return siteRepository.save(siteWriteDocument)
                 .transformDeferred(RetryOperator.of(retryFirestore))
                 .transformDeferred(mono-> fallbackCircuitBreaker(mono, cbFirestore, CB_FIRESTORE_ID, "save"))
-                .map(siteMapper::toDto);
+                .log()
+                .then();
     }
 
     @Override
-    @CacheEvict(value = "sites", key = "#site.id")
-    public Mono<ResponseEntity<Void>> update(Site site) {
+    public Mono<Void> update(Site site) {
         return siteRepository.findById(site.getId())
                 .transformDeferred(RetryOperator.of(retryFirestore))
-                .transformDeferred(mono -> fallbackCircuitBreaker(mono, cbFirestore, CB_FIRESTORE_ID, "update"))
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("Site not found: %s", site.getId()))))
-                .flatMap(existingSite -> {
-                    var siteWriteDocument = buildDocument(site);
-                    log.info("Update: site document to write: {}", siteWriteDocument);
-                    return siteRepository.save(siteWriteDocument);
-                })
-                .map(updatedSite -> ResponseEntity.ok().<Void>build())
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+                .transformDeferred(mono-> fallbackCircuitBreaker(mono,cbFirestore,CB_FIRESTORE_ID,"update"))
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Site to update not found")))
+                .map(siteWriteDocument -> siteMapper.updateDoc(site, siteWriteDocument))
+                .flatMap(siteRepository::save)
+                .log()
+                .then();
     }
 
     @Override
-    @CacheEvict(value = "sites", key = "#site.id")
-    public Mono<ResponseEntity<Void>> patch(Site site) {
-        return siteRepository.findById(site.getId())
-            .transformDeferred(RetryOperator.of(retryFirestore))
-            .transformDeferred(mono -> fallbackCircuitBreaker(mono, cbFirestore, CB_FIRESTORE_ID, "patch"))
-            .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("Site not found: %s", site.getId()))))
-            .flatMap(existingSite -> {
-                var siteWriteDocument = buildDocument(site);
-                log.info("Patch: site document to write: {}", siteWriteDocument);
-                return siteRepository.save(siteWriteDocument);
-            })
-            .map(patchedSite -> ResponseEntity.ok().<Void>build())
-            .defaultIfEmpty(ResponseEntity.notFound().build());
-    }
-
-    @Override
-    @CacheEvict(value = "sites", key = "#siteId")
-    public Mono<ResponseEntity<Void>> delete(String siteId) {
+    public Mono<Void> delete(String siteId) {
         return siteRepository.findById(siteId)
                 .transformDeferred(RetryOperator.of(retryFirestore))
-                .transformDeferred(mono -> fallbackCircuitBreaker(mono, cbFirestore, CB_FIRESTORE_ID, "delete"))
-                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, String.format("Site not found: %s", siteId))))
-                .flatMap(site -> siteRepository.deleteById(siteId).then(Mono.just(ResponseEntity.noContent().<Void>build())))
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+                .transformDeferred(mono-> fallbackCircuitBreaker(mono,cbFirestore,CB_FIRESTORE_ID,"delete"))
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Site to delete not found")))
+                .map(SiteWriteDocument::getId)
+                .flatMap(siteRepository::deleteById)
+                .log();
     }
 
     private SiteWriteDocument buildDocument(Site site) {

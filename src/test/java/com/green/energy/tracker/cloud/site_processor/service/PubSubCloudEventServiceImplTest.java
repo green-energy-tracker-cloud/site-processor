@@ -1,8 +1,8 @@
 package com.green.energy.tracker.cloud.site_processor.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.events.cloud.pubsub.v1.PubsubMessage;
 import com.google.events.cloud.pubsub.v1.MessagePublishedData;
+import com.google.events.cloud.pubsub.v1.PubsubMessage;
 import com.google.protobuf.ByteString;
 import com.green.energy.tracker.cloud.common.v1.GeoLocation;
 import com.green.energy.tracker.cloud.site.v1.Site;
@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -22,8 +24,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -44,21 +48,28 @@ class PubSubCloudEventServiceImplTest {
         pubSubCloudEventService = new PubSubCloudEventServiceImpl(objectMapper, siteService);
     }
 
+    // ==================== CREATE EVENT TESTS ====================
+
     @Test
-    void handleSiteEvents_withCreateEvent_shouldCallSiteServiceCreate() throws Exception {
+    void handleSiteEvents_withCreateEvent_shouldReturnOkStatusWithNoBody() throws Exception {
         Site site = createTestSite();
         CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.CREATE);
         MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.CREATE);
-        SiteResponseDto expectedResponse = new SiteResponseDto();
 
         when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
                 .thenReturn(messagePublishedData);
-        when(siteService.create(any(Site.class))).thenReturn(Mono.just(expectedResponse));
+        when(siteService.create(any(Site.class)))
+                .thenReturn(Mono.empty());
 
-        Mono<SiteResponseDto> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
+        Mono<ResponseEntity<Void>> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
 
         StepVerifier.create(result)
-                .expectNext(expectedResponse)
+                .assertNext(response -> {
+                    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+                    assertThat(response.getBody()).isNull();
+                    assertThat(response.hasBody()).isFalse();
+                })
                 .verifyComplete();
 
         verify(objectMapper).readValue(any(byte[].class), eq(MessagePublishedData.class));
@@ -66,26 +77,161 @@ class PubSubCloudEventServiceImplTest {
     }
 
     @Test
-    void handleSiteEvents_withIOException_shouldReturnError() throws Exception {
-        CloudEvent cloudEvent = createCloudEvent(createTestSite(), SiteEventType.CREATE);
-        IOException expectedException = new IOException("Deserialization error");
+    void handleSiteEvents_withCreateEventAndServiceError_shouldPropagateError() throws Exception {
+        Site site = createTestSite();
+        CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.CREATE);
+        MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.CREATE);
+        RuntimeException serviceException = new RuntimeException("Database error");
 
         when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
-                .thenThrow(expectedException);
+                .thenReturn(messagePublishedData);
+        when(siteService.create(any(Site.class)))
+                .thenReturn(Mono.error(serviceException));
 
-        Mono<SiteResponseDto> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
+        Mono<ResponseEntity<Void>> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
 
         StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof IOException &&
-                        throwable.getMessage().equals("Deserialization error"))
+                .expectErrorMatches(throwable ->
+                    throwable instanceof RuntimeException &&
+                    throwable.getMessage().equals("Database error"))
                 .verify();
 
+        verify(siteService).create(any(Site.class));
+    }
+
+    // ==================== UPDATE EVENT TESTS ====================
+
+    @Test
+    void handleSiteEvents_withUpdateEvent_shouldReturnOkStatusWithNoBody() throws Exception {
+        Site site = createTestSite();
+        CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.UPDATE);
+        MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.UPDATE);
+
+        when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
+                .thenReturn(messagePublishedData);
+        when(siteService.update(any(Site.class)))
+                .thenReturn(Mono.empty());
+
+        Mono<ResponseEntity<Void>> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
+
+        StepVerifier.create(result)
+                .assertNext(response -> {
+                    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                    assertThat(response.getStatusCodeValue()).isEqualTo(200);
+                    assertThat(response.getBody()).isNull();
+                })
+                .verifyComplete();
+
         verify(objectMapper).readValue(any(byte[].class), eq(MessagePublishedData.class));
-        verify(siteService, never()).create(any(Site.class));
+        verify(siteService).update(any(Site.class));
     }
 
     @Test
-    void handleSiteEvents_withInvalidEventData_shouldReturnError() throws Exception {
+    void handleSiteEvents_withUpdateEventAndServiceError_shouldPropagateError() throws Exception {
+        Site site = createTestSite();
+        CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.UPDATE);
+        MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.UPDATE);
+        RuntimeException serviceException = new RuntimeException("Update failed");
+
+        when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
+                .thenReturn(messagePublishedData);
+        when(siteService.update(any(Site.class)))
+                .thenReturn(Mono.error(serviceException));
+
+        Mono<ResponseEntity<Void>> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
+
+        StepVerifier.create(result)
+                .expectErrorMatches(throwable ->
+                    throwable instanceof RuntimeException &&
+                    throwable.getMessage().equals("Update failed"))
+                .verify();
+
+        verify(siteService).update(any(Site.class));
+    }
+
+    // ==================== DELETE EVENT TESTS ====================
+
+    @Test
+    void handleSiteEvents_withDeleteEvent_shouldReturnAcceptedStatusWithNoBody() throws Exception {
+        Site site = createTestSite();
+        CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.DELETE);
+        MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.DELETE);
+
+        when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
+                .thenReturn(messagePublishedData);
+        when(siteService.delete(eq("site-123")))
+                .thenReturn(Mono.empty());
+
+        Mono<ResponseEntity<Void>> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
+
+        StepVerifier.create(result)
+                .assertNext(response -> {
+                    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+                    assertThat(response.getStatusCodeValue()).isEqualTo(202);
+                    assertThat(response.getBody()).isNull();
+                })
+                .verifyComplete();
+
+        verify(objectMapper).readValue(any(byte[].class), eq(MessagePublishedData.class));
+        verify(siteService).delete("site-123");
+    }
+
+    @Test
+    void handleSiteEvents_shouldExtractEntityIdFromAttributesForDelete() throws Exception {
+        Site site = createTestSite();
+        CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.DELETE);
+        MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.DELETE);
+
+        when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
+                .thenReturn(messagePublishedData);
+        when(siteService.delete(anyString()))
+                .thenReturn(Mono.empty());
+
+        pubSubCloudEventService.handleSiteEvents(cloudEvent);
+
+        verify(siteService).delete("site-123");
+    }
+
+    // ==================== UNRECOGNIZED EVENT TESTS ====================
+
+    @Test
+    void handleSiteEvents_withUnrecognizedEventType_shouldReturnEmpty() throws Exception {
+        Site site = createTestSite();
+        CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.UNRECOGNIZED);
+        MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.UNRECOGNIZED);
+
+        when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
+                .thenReturn(messagePublishedData);
+
+        Mono<ResponseEntity<Void>> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
+
+        StepVerifier.create(result)
+                .verifyComplete();
+
+        verify(objectMapper).readValue(any(byte[].class), eq(MessagePublishedData.class));
+        verifyNoInteractions(siteService);
+    }
+
+    // ==================== ERROR HANDLING TESTS ====================
+
+    @Test
+    void handleSiteEvents_whenObjectMapperThrowsIOException_shouldThrowException() throws Exception {
+        CloudEvent cloudEvent = createCloudEvent(createTestSite(), SiteEventType.CREATE);
+        IOException ioException = new IOException("Deserialization failed");
+
+        when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
+                .thenThrow(ioException);
+
+        assertThatThrownBy(() -> pubSubCloudEventService.handleSiteEvents(cloudEvent))
+                .isInstanceOf(IOException.class)
+                .hasMessage("Deserialization failed");
+
+        verify(objectMapper).readValue(any(byte[].class), eq(MessagePublishedData.class));
+        verifyNoInteractions(siteService);
+    }
+
+    @Test
+    void handleSiteEvents_withInvalidEventData_shouldThrowException() throws Exception {
         CloudEvent cloudEvent = CloudEventBuilder.v1()
                 .withId("test-id")
                 .withSource(URI.create("test-source"))
@@ -96,51 +242,26 @@ class PubSubCloudEventServiceImplTest {
         when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
                 .thenThrow(new IOException("Invalid JSON"));
 
-        Mono<SiteResponseDto> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
-
-        StepVerifier.create(result)
-                .expectError(IOException.class)
-                .verify();
+        assertThatThrownBy(() -> pubSubCloudEventService.handleSiteEvents(cloudEvent))
+                .isInstanceOf(IOException.class)
+                .hasMessage("Invalid JSON");
     }
 
     @Test
-    void handleSiteEvents_withUnknownEventType_shouldReturnEmptyMono() throws Exception {
-        Site site = createTestSite();
-        CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.UNRECOGNIZED);
-        MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.UNRECOGNIZED);
+    void handleSiteEvents_withNullCloudEventData_shouldThrowNullPointerException() throws Exception {
+        CloudEvent cloudEvent = CloudEventBuilder.v1()
+                .withId("test-id")
+                .withSource(URI.create("test-source"))
+                .withType("test-type")
+                .build();
 
-        when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
-                .thenReturn(messagePublishedData);
+        assertThatThrownBy(() -> pubSubCloudEventService.handleSiteEvents(cloudEvent))
+                .isInstanceOf(NullPointerException.class);
 
-        Mono<SiteResponseDto> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
-
-        StepVerifier.create(result)
-                .verifyComplete();
-
-        verify(objectMapper).readValue(any(byte[].class), eq(MessagePublishedData.class));
-        verify(siteService, never()).create(any(Site.class));
+        verifyNoInteractions(siteService);
     }
 
-    @Test
-    void handleSiteEvents_withCreateEventAndServiceError_shouldPropagateError() throws Exception {
-        Site site = createTestSite();
-        CloudEvent cloudEvent = createCloudEvent(site, SiteEventType.CREATE);
-        MessagePublishedData messagePublishedData = createMessagePublishedData(site, SiteEventType.CREATE);
-        RuntimeException expectedException = new RuntimeException("Service error");
-
-        when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
-                .thenReturn(messagePublishedData);
-        when(siteService.create(any(Site.class))).thenReturn(Mono.error(expectedException));
-
-        Mono<SiteResponseDto> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
-
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof RuntimeException &&
-                        throwable.getMessage().equals("Service error"))
-                .verify();
-
-        verify(siteService).create(any(Site.class));
-    }
+    // ==================== HELPER METHODS ====================
 
     private Site createTestSite() {
         return Site.newBuilder()
@@ -187,5 +308,13 @@ class PubSubCloudEventServiceImplTest {
         return MessagePublishedData.newBuilder()
                 .setMessage(message)
                 .build();
+    }
+
+    private SiteResponseDto createSiteResponseDto() {
+        SiteResponseDto dto = new SiteResponseDto();
+        dto.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
+        dto.setName("Test Site");
+        dto.setUserId(UUID.fromString("456e7890-e89b-12d3-a456-426614174000"));
+        return dto;
     }
 }
