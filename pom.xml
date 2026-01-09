@@ -32,7 +32,7 @@
 		<jacoco.maven.plugin.version>0.8.11</jacoco.maven.plugin.version>
 		<cloud.events.version>2.5.0</cloud.events.version>
 		<cloud.events.types.version>0.17.1</cloud.events.types.version>
-		<url.api.contracts.repo>artifactregistry://us-east1-maven.pkg.dev/reference-lens-482009-j5/api-contracts-repo</url.api.contracts.repo>
+		<url.api.contracts.repo>artifactregistry://us-east1-maven.pkg.dev/green-energy-tracker-cloud-v3/api-contracts-repo</url.api.contracts.repo>
 	</properties>
 	<repositories>
 		<repository>
