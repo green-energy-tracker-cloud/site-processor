@@ -34,6 +34,7 @@
 		<cloud.events.types.version>0.17.1</cloud.events.types.version>
 		<url.api.contracts.repo>artifactregistry://us-east1-maven.pkg.dev/green-energy-tracker-cloud-v3/api-contracts-repo</url.api.contracts.repo>
 	</properties>
+
 	<repositories>
 		<repository>
 			<id>artifact-registry</id>
@@ -47,35 +48,19 @@
 			</snapshots>
 		</repository>
 	</repositories>
+
 	<dependencies>
+		<!-- Api contracts -->
 		<dependency>
 			<groupId>com.green.energy.tracker.cloud</groupId>
 			<artifactId>api-contracts</artifactId>
 			<version>${api-contracts.version}</version>
 		</dependency>
-
-		<dependency>
-			<groupId>com.google.protobuf</groupId>
-			<artifactId>protobuf-java</artifactId>
-			<version>${protobuf.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.hubspot.jackson</groupId>
-			<artifactId>jackson-datatype-protobuf</artifactId>
-			<version>${jackson-protobuf.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
-		</dependency>
-
+		<!-- Google -->
 		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>spring-cloud-gcp-starter</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>spring-cloud-gcp-starter-pubsub</artifactId>
@@ -83,6 +68,42 @@
 		<dependency>
 			<groupId>com.google.cloud</groupId>
 			<artifactId>spring-cloud-gcp-starter-data-firestore</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>${protobuf.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.cloud</groupId>
+			<artifactId>google-cloudevent-types</artifactId>
+			<version>${cloud.events.types.version}</version>
+		</dependency>
+		<!-- CloudEvents -->
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-core</artifactId>
+			<version>${cloud.events.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-http-basic</artifactId>
+			<version>${cloud.events.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-spring</artifactId>
+			<version>${cloud.events.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.cloudevents</groupId>
+			<artifactId>cloudevents-json-jackson</artifactId>
+			<version>${cloud.events.version}</version>
+		</dependency>
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -98,43 +119,33 @@
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
-
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct</artifactId>
-			<version>${map.struct.version}</version>
-		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
-		<dependency>
-			<groupId>io.projectreactor</groupId>
-			<artifactId>reactor-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-inline</artifactId>
-			<version>${mockito.inline.version}</version>
-			<scope>test</scope>
-		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-
+		<!-- Jackson -->
+		<dependency>
+			<groupId>com.hubspot.jackson</groupId>
+			<artifactId>jackson-datatype-protobuf</artifactId>
+			<version>${jackson-protobuf.version}</version>
+		</dependency>
+		<!-- Lombok & Mapstruct-->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${map.struct.version}</version>
+		</dependency>
+		<!-- Swagger & OpenApi -->
 		<dependency>
 			<groupId>org.openapitools</groupId>
 			<artifactId>jackson-databind-nullable</artifactId>
@@ -145,40 +156,24 @@
 			<artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
 			<version>${openapi.ui.version}</version>
 		</dependency>
-
+		<!-- Mockito & Reactor Test -->
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-inline</artifactId>
+			<version>${mockito.inline.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- Resilience4j -->
 		<dependency>
 			<groupId>io.github.resilience4j</groupId>
 			<artifactId>resilience4j-reactor</artifactId>
 		</dependency>
 
-		<!-- CloudEvents Core -->
-		<dependency>
-			<groupId>io.cloudevents</groupId>
-			<artifactId>cloudevents-core</artifactId>
-			<version>${cloud.events.version}</version>
-		</dependency>
-		<!-- CloudEvents HTTP Basic -->
-		<dependency>
-			<groupId>io.cloudevents</groupId>
-			<artifactId>cloudevents-http-basic</artifactId>
-			<version>${cloud.events.version}</version>
-		</dependency>
-		<!-- CloudEvents Spring -->
-		<dependency>
-			<groupId>io.cloudevents</groupId>
-			<artifactId>cloudevents-spring</artifactId>
-			<version>${cloud.events.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>io.cloudevents</groupId>
-			<artifactId>cloudevents-json-jackson</artifactId>
-			<version>${cloud.events.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.cloud</groupId>
-			<artifactId>google-cloudevent-types</artifactId>
-			<version>${cloud.events.types.version}</version>
-		</dependency>
 	</dependencies>
 
 	<dependencyManagement>
