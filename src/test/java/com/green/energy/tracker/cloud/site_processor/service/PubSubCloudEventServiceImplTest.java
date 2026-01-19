@@ -7,7 +7,6 @@ import com.google.protobuf.ByteString;
 import com.green.energy.tracker.cloud.common.v1.GeoLocation;
 import com.green.energy.tracker.cloud.site.v1.Site;
 import com.green.energy.tracker.cloud.site.v1.SiteEventType;
-import com.green.energy.tracker.cloud.sitebff.web.model.SiteResponseDto;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,7 +23,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

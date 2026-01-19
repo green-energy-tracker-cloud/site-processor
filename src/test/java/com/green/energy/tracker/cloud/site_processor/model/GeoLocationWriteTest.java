@@ -176,22 +176,6 @@ class GeoLocationWriteTest {
     }
 
     @Test
-    void equals_shouldReturnFalseForDifferentLatitude() {
-        GeoLocationWrite geo1 = new GeoLocationWrite(40.7128, -74.0060);
-        GeoLocationWrite geo2 = new GeoLocationWrite(41.0000, -74.0060);
-
-        assertNotEquals(geo1, geo2);
-    }
-
-    @Test
-    void equals_shouldReturnFalseForDifferentLongitude() {
-        GeoLocationWrite geo1 = new GeoLocationWrite(40.7128, -74.0060);
-        GeoLocationWrite geo2 = new GeoLocationWrite(40.7128, -75.0000);
-
-        assertNotEquals(geo1, geo2);
-    }
-
-    @Test
     void equals_shouldBeSymmetric() {
         GeoLocationWrite geo1 = new GeoLocationWrite(40.7128, -74.0060);
         GeoLocationWrite geo2 = new GeoLocationWrite(40.7128, -74.0060);

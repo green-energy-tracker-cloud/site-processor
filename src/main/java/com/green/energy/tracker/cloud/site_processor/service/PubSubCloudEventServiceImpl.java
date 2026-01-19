@@ -22,8 +22,8 @@ public class PubSubCloudEventServiceImpl implements CloudEventManagementService{
 
     private final ObjectMapper objectMapper;
     private final SiteService siteService;
-    private static final String attributeEntityId = "entity_id";
-    private static final String attributeEventType = "event_type";
+    private static final String ATTRIBUTE_ENTITY_ID = "entity_id";
+    private static final String ATTRIBUTE_EVENT_TYPE = "event_type";
 
     @Override
     public Mono<ResponseEntity<Void>> handleSiteEvents(CloudEvent event) throws IOException {
@@ -33,8 +33,8 @@ public class PubSubCloudEventServiceImpl implements CloudEventManagementService{
     }
 
     private Mono<ResponseEntity<Void>> handleSiteEventsType(MessagePublishedData pubSubEvent) throws InvalidProtocolBufferException {
-        var entityId = pubSubEvent.getMessage().getAttributesMap().get(attributeEntityId);
-        var eventType = SiteEventType.valueOf(pubSubEvent.getMessage().getAttributesMap().get(attributeEventType));
+        var entityId = pubSubEvent.getMessage().getAttributesMap().get(ATTRIBUTE_ENTITY_ID);
+        var eventType = SiteEventType.valueOf(pubSubEvent.getMessage().getAttributesMap().get(ATTRIBUTE_EVENT_TYPE));
         switch (eventType) {
             case CREATE -> {
                 return siteService.create(Site.parseFrom(pubSubEvent.getMessage().getData()))
@@ -48,7 +48,9 @@ public class PubSubCloudEventServiceImpl implements CloudEventManagementService{
                 return siteService.delete(entityId)
                         .then(Mono.just(ResponseEntity.status(HttpStatus.ACCEPTED).build()));
             }
+            default -> {
+                return Mono.empty();
+            }
         }
-        return Mono.empty();
     }
 }
