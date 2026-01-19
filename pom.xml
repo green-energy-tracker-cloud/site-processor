@@ -173,6 +173,7 @@
 			<groupId>io.github.resilience4j</groupId>
 			<artifactId>resilience4j-reactor</artifactId>
 		</dependency>
+
 	</dependencies>
 
 	<dependencyManagement>
