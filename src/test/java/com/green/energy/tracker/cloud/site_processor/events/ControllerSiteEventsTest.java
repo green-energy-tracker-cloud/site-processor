@@ -12,10 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-
 import java.io.IOException;
 import java.net.URI;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -101,7 +99,6 @@ class ControllerSiteEventsTest {
         StepVerifier.create(result)
                 .assertNext(response -> {
                     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-                    assertThat(response.getStatusCodeValue()).isEqualTo(202);
                     assertThat(response.getBody()).isNull();
                 })
                 .verifyComplete();

@@ -66,7 +66,6 @@ class PubSubCloudEventServiceImplTest {
         StepVerifier.create(result)
                 .assertNext(response -> {
                     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                    assertThat(response.getStatusCodeValue()).isEqualTo(200);
                     assertThat(response.getBody()).isNull();
                     assertThat(response.hasBody()).isFalse();
                 })
@@ -99,8 +98,6 @@ class PubSubCloudEventServiceImplTest {
         verify(siteService).create(any(Site.class));
     }
 
-    // ==================== UPDATE EVENT TESTS ====================
-
     @Test
     void handleSiteEvents_withUpdateEvent_shouldReturnOkStatusWithNoBody() throws Exception {
         Site site = createTestSite();
@@ -117,7 +114,6 @@ class PubSubCloudEventServiceImplTest {
         StepVerifier.create(result)
                 .assertNext(response -> {
                     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                    assertThat(response.getStatusCodeValue()).isEqualTo(200);
                     assertThat(response.getBody()).isNull();
                 })
                 .verifyComplete();
@@ -149,8 +145,6 @@ class PubSubCloudEventServiceImplTest {
         verify(siteService).update(any(Site.class));
     }
 
-    // ==================== DELETE EVENT TESTS ====================
-
     @Test
     void handleSiteEvents_withDeleteEvent_shouldReturnAcceptedStatusWithNoBody() throws Exception {
         Site site = createTestSite();
@@ -159,7 +153,7 @@ class PubSubCloudEventServiceImplTest {
 
         when(objectMapper.readValue(any(byte[].class), eq(MessagePublishedData.class)))
                 .thenReturn(messagePublishedData);
-        when(siteService.delete(eq("site-123")))
+        when(siteService.delete("site-123"))
                 .thenReturn(Mono.empty());
 
         Mono<ResponseEntity<Void>> result = pubSubCloudEventService.handleSiteEvents(cloudEvent);
@@ -167,7 +161,6 @@ class PubSubCloudEventServiceImplTest {
         StepVerifier.create(result)
                 .assertNext(response -> {
                     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
-                    assertThat(response.getStatusCodeValue()).isEqualTo(202);
                     assertThat(response.getBody()).isNull();
                 })
                 .verifyComplete();
@@ -192,8 +185,6 @@ class PubSubCloudEventServiceImplTest {
         verify(siteService).delete("site-123");
     }
 
-    // ==================== UNRECOGNIZED EVENT TESTS ====================
-
     @Test
     void handleSiteEvents_withUnrecognizedEventType_shouldReturnEmpty() throws Exception {
         Site site = createTestSite();
@@ -211,8 +202,6 @@ class PubSubCloudEventServiceImplTest {
         verify(objectMapper).readValue(any(byte[].class), eq(MessagePublishedData.class));
         verifyNoInteractions(siteService);
     }
-
-    // ==================== ERROR HANDLING TESTS ====================
 
     @Test
     void handleSiteEvents_whenObjectMapperThrowsIOException_shouldThrowException() throws Exception {
@@ -248,7 +237,7 @@ class PubSubCloudEventServiceImplTest {
     }
 
     @Test
-    void handleSiteEvents_withNullCloudEventData_shouldThrowNullPointerException() throws Exception {
+    void handleSiteEvents_withNullCloudEventData_shouldThrowNullPointerException() {
         CloudEvent cloudEvent = CloudEventBuilder.v1()
                 .withId("test-id")
                 .withSource(URI.create("test-source"))
@@ -260,8 +249,6 @@ class PubSubCloudEventServiceImplTest {
 
         verifyNoInteractions(siteService);
     }
-
-    // ==================== HELPER METHODS ====================
 
     private Site createTestSite() {
         return Site.newBuilder()
@@ -310,11 +297,4 @@ class PubSubCloudEventServiceImplTest {
                 .build();
     }
 
-    private SiteResponseDto createSiteResponseDto() {
-        SiteResponseDto dto = new SiteResponseDto();
-        dto.setId(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"));
-        dto.setName("Test Site");
-        dto.setUserId(UUID.fromString("456e7890-e89b-12d3-a456-426614174000"));
-        return dto;
-    }
 }

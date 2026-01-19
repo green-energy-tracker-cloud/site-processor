@@ -2,7 +2,6 @@ package com.green.energy.tracker.cloud.site_processor.model;
 
 import java.util.Date;
 import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class SiteWriteDocumentTest {
@@ -14,7 +13,6 @@ class SiteWriteDocumentTest {
             .latitude(40.7128)
             .longitude(-74.0060)
             .build();
-
         SiteWriteDocument document = SiteWriteDocument.builder()
             .id("site-123")
             .name("Test Site")
@@ -24,7 +22,6 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         assertNotNull(document);
         assertEquals("site-123", document.getId());
         assertEquals("Test Site", document.getName());
@@ -38,7 +35,6 @@ class SiteWriteDocumentTest {
     @Test
     void noArgsConstructor_shouldCreateEmptyDocument() {
         SiteWriteDocument document = new SiteWriteDocument();
-
         assertNotNull(document);
         assertNull(document.getId());
         assertNull(document.getName());
@@ -53,7 +49,6 @@ class SiteWriteDocumentTest {
     void allArgsConstructor_shouldCreateDocumentWithAllFields() {
         Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
-
         SiteWriteDocument document = new SiteWriteDocument(
             "site-789",
             "Another Site",
@@ -63,7 +58,6 @@ class SiteWriteDocumentTest {
             now,
             now
         );
-
         assertNotNull(document);
         assertEquals("site-789", document.getId());
         assertEquals("Another Site", document.getName());
@@ -79,7 +73,6 @@ class SiteWriteDocumentTest {
         SiteWriteDocument document = new SiteWriteDocument();
         Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(51.5074, -0.1278);
-
         document.setId("new-id");
         document.setName("New Name");
         document.setUserId("new-user");
@@ -87,7 +80,6 @@ class SiteWriteDocumentTest {
         document.setLocation(geoLocation);
         document.setCreatedAt(now);
         document.setUpdatedAt(now);
-
         assertEquals("new-id", document.getId());
         assertEquals("New Name", document.getName());
         assertEquals("new-user", document.getUserId());
@@ -101,7 +93,6 @@ class SiteWriteDocumentTest {
     void equals_shouldReturnTrueForSameContent() {
         Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
-
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Site Name")
@@ -111,7 +102,6 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         SiteWriteDocument doc2 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Site Name")
@@ -121,25 +111,19 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         assertEquals(doc1, doc2);
     }
 
     @Test
     void equals_shouldReturnFalseForDifferentContent() {
-        Date now = new Date();
-        GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
-
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Site Name 1")
             .build();
-
         SiteWriteDocument doc2 = SiteWriteDocument.builder()
             .id("site-2")
             .name("Site Name 2")
             .build();
-
         assertNotEquals(doc1, doc2);
     }
 
@@ -147,7 +131,6 @@ class SiteWriteDocumentTest {
     void hashCode_shouldBeConsistentWithEquals() {
         Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
-
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Site Name")
@@ -157,7 +140,6 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         SiteWriteDocument doc2 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Site Name")
@@ -167,7 +149,6 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         assertEquals(doc1.hashCode(), doc2.hashCode());
     }
 
@@ -175,7 +156,6 @@ class SiteWriteDocumentTest {
     void toString_shouldContainAllFields() {
         Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
-
         SiteWriteDocument document = SiteWriteDocument.builder()
             .id("site-123")
             .name("Test Site")
@@ -185,9 +165,7 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         String result = document.toString();
-
         assertNotNull(result);
         assertTrue(result.contains("site-123"));
         assertTrue(result.contains("Test Site"));
@@ -206,7 +184,6 @@ class SiteWriteDocumentTest {
             .createdAt(null)
             .updatedAt(null)
             .build();
-
         assertNotNull(document);
         assertNull(document.getId());
         assertNull(document.getName());
@@ -217,13 +194,10 @@ class SiteWriteDocumentTest {
         assertNull(document.getUpdatedAt());
     }
 
-    // Test aggiuntivi per toString() generato da @Data
     @Test
     void toString_shouldContainClassName() {
         SiteWriteDocument document = new SiteWriteDocument();
-
         String result = document.toString();
-
         assertNotNull(result);
         assertTrue(result.contains("SiteWriteDocument"));
     }
@@ -231,28 +205,23 @@ class SiteWriteDocumentTest {
     @Test
     void toString_shouldNotReturnNull() {
         SiteWriteDocument document = new SiteWriteDocument();
-
         assertNotNull(document.toString());
     }
 
     @Test
     void toString_shouldHandleNullFields() {
         SiteWriteDocument document = SiteWriteDocument.builder().build();
-
         String result = document.toString();
-
         assertNotNull(result);
         assertTrue(result.contains("SiteWriteDocument"));
     }
 
-    // Test aggiuntivi per equals() - casi edge
     @Test
     void equals_shouldReturnTrueForSameObject() {
         SiteWriteDocument document = SiteWriteDocument.builder()
             .id("site-1")
             .name("Test Site")
             .build();
-
         assertEquals(document, document);
     }
 
@@ -262,7 +231,6 @@ class SiteWriteDocumentTest {
             .id("site-1")
             .name("Test Site")
             .build();
-
         assertNotEquals(null, document);
     }
 
@@ -273,8 +241,7 @@ class SiteWriteDocumentTest {
             .name("Test Site")
             .build();
         String differentType = "Not a SiteWriteDocument";
-
-        assertNotEquals(document, differentType);
+        assertNotEquals(differentType, document);
     }
 
     @Test
@@ -287,7 +254,6 @@ class SiteWriteDocumentTest {
             .id("site-2")
             .name("Test Site")
             .build();
-
         assertNotEquals(doc1, doc2);
     }
 
@@ -301,7 +267,6 @@ class SiteWriteDocumentTest {
             .id("site-1")
             .name("Site B")
             .build();
-
         assertNotEquals(doc1, doc2);
     }
 
@@ -315,7 +280,6 @@ class SiteWriteDocumentTest {
             .id("site-1")
             .userId("user-2")
             .build();
-
         assertNotEquals(doc1, doc2);
     }
 
@@ -329,7 +293,6 @@ class SiteWriteDocumentTest {
             .id("site-1")
             .address("Address 2")
             .build();
-
         assertNotEquals(doc1, doc2);
     }
 
@@ -337,7 +300,6 @@ class SiteWriteDocumentTest {
     void equals_shouldReturnFalseForDifferentLocation() {
         GeoLocationWrite loc1 = new GeoLocationWrite(40.7128, -74.0060);
         GeoLocationWrite loc2 = new GeoLocationWrite(51.5074, -0.1278);
-
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
             .location(loc1)
@@ -346,7 +308,6 @@ class SiteWriteDocumentTest {
             .id("site-1")
             .location(loc2)
             .build();
-
         assertNotEquals(doc1, doc2);
     }
 
@@ -354,7 +315,6 @@ class SiteWriteDocumentTest {
     void equals_shouldReturnFalseForDifferentCreatedAt() {
         Date time1 = new Date(1000 * 1000);
         Date time2 = new Date(2000 * 1000);
-
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
             .createdAt(time1)
@@ -363,7 +323,6 @@ class SiteWriteDocumentTest {
             .id("site-1")
             .createdAt(time2)
             .build();
-
         assertNotEquals(doc1, doc2);
     }
 
@@ -371,7 +330,6 @@ class SiteWriteDocumentTest {
     void equals_shouldReturnFalseForDifferentUpdatedAt() {
         Date time1 = new Date(1000 * 1000);
         Date time2 = new Date(2000 * 1000);
-
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
             .updatedAt(time1)
@@ -380,7 +338,6 @@ class SiteWriteDocumentTest {
             .id("site-1")
             .updatedAt(time2)
             .build();
-
         assertNotEquals(doc1, doc2);
     }
 
@@ -388,7 +345,6 @@ class SiteWriteDocumentTest {
     void equals_shouldBeSymmetric() {
         Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
-
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Test Site")
@@ -398,7 +354,6 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         SiteWriteDocument doc2 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Test Site")
@@ -408,7 +363,6 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         assertTrue(doc1.equals(doc2) && doc2.equals(doc1));
     }
 
@@ -416,7 +370,6 @@ class SiteWriteDocumentTest {
     void equals_shouldBeTransitive() {
         Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
-
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Test Site")
@@ -426,7 +379,6 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         SiteWriteDocument doc2 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Test Site")
@@ -436,7 +388,6 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         SiteWriteDocument doc3 = SiteWriteDocument.builder()
             .id("site-1")
             .name("Test Site")
@@ -446,13 +397,11 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
-        assertTrue(doc1.equals(doc2));
-        assertTrue(doc2.equals(doc3));
-        assertTrue(doc1.equals(doc3));
+        assertEquals(doc1, doc2);
+        assertEquals(doc2, doc3);
+        assertEquals(doc1, doc3);
     }
 
-    // Test aggiuntivi per hashCode()
     @Test
     void hashCode_shouldBeDifferentForDifferentObjects() {
         SiteWriteDocument doc1 = SiteWriteDocument.builder()
@@ -463,7 +412,6 @@ class SiteWriteDocumentTest {
             .id("site-2")
             .name("Site B")
             .build();
-
         assertNotEquals(doc1.hashCode(), doc2.hashCode());
     }
 
@@ -471,7 +419,6 @@ class SiteWriteDocumentTest {
     void hashCode_shouldBeConsistentOnMultipleCalls() {
         Date now = new Date();
         GeoLocationWrite geoLocation = new GeoLocationWrite(40.7128, -74.0060);
-
         SiteWriteDocument document = SiteWriteDocument.builder()
             .id("site-1")
             .name("Test Site")
@@ -481,10 +428,8 @@ class SiteWriteDocumentTest {
             .createdAt(now)
             .updatedAt(now)
             .build();
-
         int firstHashCode = document.hashCode();
         int secondHashCode = document.hashCode();
-
         assertEquals(firstHashCode, secondHashCode);
     }
 
@@ -494,11 +439,8 @@ class SiteWriteDocumentTest {
             .id("site-1")
             .name("Original Name")
             .build();
-
         int originalHashCode = document.hashCode();
-
         document.setName("Modified Name");
-
         int newHashCode = document.hashCode();
         assertNotEquals(originalHashCode, newHashCode);
     }
@@ -506,44 +448,34 @@ class SiteWriteDocumentTest {
     @Test
     void hashCode_shouldHandleNullFields() {
         SiteWriteDocument document = new SiteWriteDocument();
-
-        assertDoesNotThrow(() -> document.hashCode());
+        assertDoesNotThrow(document::hashCode);
     }
 
-    // Test aggiuntivi per i setter individuali
     @Test
     void setId_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
-
         document.setId("new-id");
-
         assertEquals("new-id", document.getId());
     }
 
     @Test
     void setName_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
-
         document.setName("new-name");
-
         assertEquals("new-name", document.getName());
     }
 
     @Test
     void setUserId_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
-
         document.setUserId("new-user-id");
-
         assertEquals("new-user-id", document.getUserId());
     }
 
     @Test
     void setAddress_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
-
         document.setAddress("new-address");
-
         assertEquals("new-address", document.getAddress());
     }
 
@@ -551,9 +483,7 @@ class SiteWriteDocumentTest {
     void setLocation_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
         GeoLocationWrite newLocation = new GeoLocationWrite(45.0, 9.0);
-
         document.setLocation(newLocation);
-
         assertEquals(newLocation, document.getLocation());
     }
 
@@ -561,9 +491,7 @@ class SiteWriteDocumentTest {
     void setCreatedAt_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
         Date newTime = new Date();
-
         document.setCreatedAt(newTime);
-
         assertEquals(newTime, document.getCreatedAt());
     }
 
@@ -571,9 +499,7 @@ class SiteWriteDocumentTest {
     void setUpdatedAt_shouldUpdateValue() {
         SiteWriteDocument document = new SiteWriteDocument();
         Date newTime = new Date();
-
         document.setUpdatedAt(newTime);
-
         assertEquals(newTime, document.getUpdatedAt());
     }
 }

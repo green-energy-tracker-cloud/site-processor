@@ -9,7 +9,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
 import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,42 +38,32 @@ class ResilienceConfigTest {
     @Test
     void circuitBreakerFirestore_shouldCreateCircuitBreakerWithFirestoreName() {
         when(circuitBreakerFactory.create("firestore")).thenReturn(mockCircuitBreaker);
-
         ReactiveCircuitBreaker result = resilienceConfig.circuitBreakerFirestore();
-
-        assertThat(result).isNotNull();
-        assertThat(result).isSameAs(mockCircuitBreaker);
+        assertThat(result).isNotNull().isSameAs(mockCircuitBreaker);
         verify(circuitBreakerFactory).create("firestore");
     }
 
     @Test
     void retryFirestore_shouldCreateRetryWithFirestoreName() {
         when(retryRegistry.retry("firestore")).thenReturn(mockRetry);
-
         Retry result = resilienceConfig.retryFirestore();
-
-        assertThat(result).isNotNull();
-        assertThat(result).isSameAs(mockRetry);
+        assertThat(result).isNotNull().isSameAs(mockRetry);
         verify(retryRegistry).retry("firestore");
     }
 
     @Test
     void circuitBreakerFirestore_shouldReturnSameInstanceOnMultipleCalls() {
         when(circuitBreakerFactory.create("firestore")).thenReturn(mockCircuitBreaker);
-
         ReactiveCircuitBreaker firstCall = resilienceConfig.circuitBreakerFirestore();
         ReactiveCircuitBreaker secondCall = resilienceConfig.circuitBreakerFirestore();
-
         assertThat(firstCall).isSameAs(secondCall);
     }
 
     @Test
     void retryFirestore_shouldReturnSameInstanceOnMultipleCalls() {
         when(retryRegistry.retry("firestore")).thenReturn(mockRetry);
-
         Retry firstCall = resilienceConfig.retryFirestore();
         Retry secondCall = resilienceConfig.retryFirestore();
-
         assertThat(firstCall).isSameAs(secondCall);
     }
 }
